@@ -1,0 +1,50 @@
+##--------------------------------------------------------------------------------------
+# Commands for kSNP3.
+
+# Export env. variable to $PATH
+export PATH=/programs/kSNP3:$PATH
+# Create input file with location of fasta files. "A" stands for Automatic mode.
+MakeKSNP3infile directory_with_files ksnp3_in_file A
+# Create Fasta file for Kchooser
+MakeFasta input_file_name output_file_name.fasta
+# Run Kchooser
+Kchooser input_file_name.fasta
+#Run kSNP3 for identifying core SNPs among selected isolates.
+kSNP3 -in ksnp3_in_file -outdir ksnp3_output -k 19 -core -min_frac 0.5 -CPU 5
+#Run kSNP3 for SNP analysis
+kSNP3 -in ksnp3_in_file -outdir ksnp3_cp4_snp_output -k 19 -core -min_frac 0.9 -CPU 5 -annotate reference_file -vcf 
+
+##--------------------------------------------------------------------------------------
+# Commands for Panaroo.
+
+# Set up PATH library path and virtual environment
+export PATH=/programs/cd-hit-4.8.1:/programs/mafft/bin:$PATH
+export PATH=/programs/panaroo-1.2.3/bin:$PATH
+export PYTHONPATH=/programs/panaroo-1.2.3/lib/python3.6/site-packages:/programs/panaroo-1.2.3/lib64/python3.6/site-packages
+# Make a directory to store output files
+mkdir results
+# Run the software with this command
+panaroo -i *.gff -o ./results/ --clean-mode strict --refind_prop_match 0.5 --threads 5
+##--------------------------------------------------------------------------------------
+# Commands for Prokka.
+source /workdir/prokka-1.12/source.sh
+# Modify --genus, --species, --kingdom, --gcode and --gram (neg or pos) accordingly
+for f in *.fasta; do prokka --outdir ${f%.fasta}_annotated --prefix ${f%.fasta} --addgenes --locustag ${f%.fasta} --compliant --centre Cornell  --genus Salmonella --species enterica --strain ${f%.fasta} --kingdom Bacteria --gcode 11 --gram neg --cpus 1 --mincontiglen 200 --rfam $f; done;
+
+##--------------------------------------------------------------------------------------
+# Commands for RAxML
+# Export env. variable to $PATH
+export PATH=/programs/RAxML-8.2.12:$PATH
+# Run the program to build a ML phylogenetic tree, using GTRGAMMAX model with Lewis correction and 1000 bootstraps.
+raxmlHPC -f a -x 165 -m ASC_GTRCATX --asc-corr=lewis --no-bfgs -p 596 -N 1000 -s core_SNPs_matrix.fasta -n Saintpaul_core_SNPs_1000bs.tre
+
+##--------------------------------------------------------------------------------------
+# Commands for Scoary
+# Set up PATH library path and virtual environment
+export PYTHONPATH=/programs/scoary/lib/python2.7/site-packages
+export PATH=/programs/scoary/bin:$PATH
+# Make a directory to store output files
+mkdir scoary_results
+# Run the software with this command (parameter values may be subject to change)
+scoary -t cp4_matrix_RC081620.csv -g cp4_gene_presence_absence_roary.csv --start_col 15 --threads 5 --outdir ./scoary_results -c BH -p 0.05 -e 10000 -u
+
